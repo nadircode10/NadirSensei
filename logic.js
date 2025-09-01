@@ -60,17 +60,10 @@ document.querySelectorAll('section').forEach(section => {
     observer.observe(section);
 });
 
-// Initialize EmailJS
-(function() {
-    emailjs.init("YOUR_PUBLIC_KEY"); // You'll need to replace this with your actual EmailJS public key
-})();
-
-// Contact form handling with EmailJS
+// Contact form handling with Formspree
 const contactForm = document.getElementById('contactForm');
 if (contactForm) {
     contactForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
         // Get form data
         const formData = new FormData(this);
         const name = formData.get('name');
@@ -80,11 +73,13 @@ if (contactForm) {
         
         // Simple validation
         if (!name || !email || !subject || !message) {
+            e.preventDefault();
             showNotification('Please fill in all fields', 'error');
             return;
         }
         
         if (!isValidEmail(email)) {
+            e.preventDefault();
             showNotification('Please enter a valid email address', 'error');
             return;
         }
@@ -95,32 +90,25 @@ if (contactForm) {
         submitBtn.textContent = 'Sending...';
         submitBtn.disabled = true;
         
-        // Prepare email template parameters
-        const templateParams = {
-            from_name: name,
-            from_email: email,
-            subject: subject,
-            message: message,
-            to_email: 'nadircode@gmail.com'
-        };
-        
-        // Send email using EmailJS
-        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
-            .then(function(response) {
-                console.log('SUCCESS!', response.status, response.text);
-                showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
-                contactForm.reset();
-            }, function(error) {
-                console.log('FAILED...', error);
-                showNotification('Failed to send message. Please try again or contact me directly at nadircode@gmail.com', 'error');
-            })
-            .finally(function() {
-                // Reset button state
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            });
+        // Form will submit to Formspree automatically
+        // We'll handle the response after submission
+        setTimeout(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }, 3000);
     });
 }
+
+// Handle Formspree response
+window.addEventListener('load', function() {
+    // Check if we're returning from Formspree
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+        showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
+    } else if (urlParams.get('error')) {
+        showNotification('Failed to send message. Please try again or contact me directly at nadircode@gmail.com', 'error');
+    }
+});
 
 // Email validation function
 function isValidEmail(email) {
